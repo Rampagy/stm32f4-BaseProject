@@ -9,10 +9,10 @@ ROOT_DIR := $(realpath $(WHEREAMI)/ )
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # Get the raw paths for all *.h files
-RAW_TARGET_PATHS := $(call rwildcard,$(ROOT_DIR)/hwconf,*.h)
+#RAW_TARGET_PATHS := $(call rwildcard,$(ROOT_DIR)/hwconf,*.h)
 
 # Get the target paths by filtering out any core.h files, then stripping extra whitespace
-TARGET_PATHS := $(strip $(filter-out %core.h,$(RAW_TARGET_PATHS)))
+#TARGET_PATHS := $(strip $(filter-out %core.h,$(RAW_TARGET_PATHS)))
 
 # configure some directories that are relative to wherever ROOT_DIR is located
 TOOLS_DIR := $(ROOT_DIR)/tools
@@ -115,23 +115,6 @@ $(TOOLS_DIR):
 ##############################
 
 # $(1) = Canonical board name all in lower case (e.g. 100_250)
-# $(2) = Target hardware directory
-define FIND_TARGET_C_CODE
-   # Remove `_no_limits`
-   $(eval ROOT_TARGET_NAME = $(subst _no_limits,,$(1)))
-
-   # Look for `*_core.c` file
-   ifneq ("$(wildcard $(2)/hw_*_core.c)","")
-      # Good luck, there it is!
-      HW_SRC_FILE = $(wildcard $(2)/hw_*_core.c)
-   else
-      # There isn't one, so let's hope for the sister `.c` file
-      HW_SRC_FILE = $(2)/hw_$(ROOT_TARGET_NAME).c
-   endif
-
-endef
-
-# $(1) = Canonical board name all in lower case (e.g. 100_250)
 # $(2) = firmware build directory
 # $(3) = firmware name
 # $(4) = git branch name
@@ -139,12 +122,10 @@ endef
 # $(6) = compiler version
 define FW_TEMPLATE
 .PHONY: $(1) fw_$(1)
-$(1): fw_$(1)_vescfw
-fw_$(1): fw_$(1)_vescfw
+$(1): fw_$(1)_fw
+fw_$(1): fw_$(1)_fw
 
-fw_$(1)_vescfw: $(eval HW_DIR = $(dir $(filter %/hw_$(1).h, $(TARGET_PATHS))))  # Find the directory for this header file
-fw_$(1)_vescfw: $(eval HW_SRC_FILE = $(call FIND_TARGET_C_CODE,$(1),$(HW_DIR)))  # Find the c code associated to this header file
-fw_$(1)_vescfw:
+fw_$(1)_fw:
 	@echo "********* BUILD: $(1) **********"
 	$(V1) $(MKDIR) $(BUILD_DIR)/$(1)
 	$(V1) $$(MAKE) -f $(MAKE_DIR)/fw.mk \
@@ -205,38 +186,6 @@ all_fw_clean:  $(addsuffix _clean,  $(FW_TARGETS))
 # Expand the firmware rules
 $(foreach board, $(ALL_BOARD_NAMES), $(eval $(call FW_TEMPLATE,$(board),$(BUILD_DIR)/$(board),$(board),$(GIT_BRANCH_NAME),$(GIT_COMMIT_HASH)$(GIT_DIRTY_LABEL),$(ARM_GCC_VERSION))))
 
-
-##############################
-#
-# Packaging
-#
-##############################
-
-.PHONY: all_fw_package
-all_fw_package: all_fw all_fw_package_clean
-	$(V0) @echo " PACKAGE        $(ROOT_DIR)/package/*"
-
-# Place all firmware files into `./package` directory
-	$(V1) $(PYTHON) package_firmware.py
-
-# Find all the leftover object and lst files
-	$(eval BUILD_CRUFT := $(call rwildcard,$(ROOT_DIR)/build,*.lst *.o))
-
-# Delete the cruft files, so as not to unnecessarily consume GB of space
-ifneq ($(OSFAMILY), windows)
-	$(V1) $(RM) $(BUILD_CRUFT)
-else
-	$(V1) powershell -noprofile -command "& {Remove-Item $(BUILD_CRUFT)}"
-endif
-
-.PHONY: all_fw_package_clean
-all_fw_package_clean:
-	$(V0) @echo " CLEAN        $(ROOT_DIR)/package/*"
-ifneq ($(OSFAMILY), windows)
-	$(V1) [ ! -d "$(ROOT_DIR)/package/" ] || $(RM) -rf $(ROOT_DIR)/package/*
-else
-	$(V1) powershell -noprofile -command "& {if (Test-Path $(ROOT_DIR)/package/*) {Remove-Item -Recurse $(ROOT_DIR)/package/*}}"
-endif
 
 
 ##############################
