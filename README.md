@@ -4,7 +4,7 @@ Starter project for the STM32F407 microcontroller
 ## Prerequisites
 
 ### On Ubuntu (Linux)/macOS
-- Tools: `git`, `wget`, and `make`
+- Tools: `git`, `wget`, `make`, and `python`
 - Additional Linux requirements: `libgl-dev` and `libxcb-xinerama0`
 - Helpful Ubuntu commands:
 ```bash
@@ -18,6 +18,7 @@ brew install openocd
 ```
 
 ### On Windows
+- Python: https://www.python.org/downloads/
 - Chocolately: https://chocolatey.org/install
 - Git: https://git-scm.com/download/win. Make sure to click any boxes to add Git to your Environment (aka PATH)
 
