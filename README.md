@@ -53,3 +53,5 @@ https://marketplace.visualstudio.com/items?itemName=ms-vscode.makefile-tools
 https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-extension-pack
 
 https://openocd.org/
+
+http://sigalrm.blogspot.com/2014/01/overclocking-stm32f4.html?m=1
