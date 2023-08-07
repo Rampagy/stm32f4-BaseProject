@@ -132,14 +132,13 @@ all: $(OBJ)
 .PHONY: clean
 
 clean:
-	# Known issue this does not work in windows...
-	@echo [RM] OBJ
-	@rm -f $(OBJ)
-	@rm -f $(ASRC:%.s=$(BUILD_DIR)/%.o)
-	@echo [RM] BIN
-	@rm -f $(BIN_DIR)/$(TARGET).elf
-	@rm -f $(BIN_DIR)/$(TARGET).hex
-	@rm -f $(BIN_DIR)/$(TARGET).bin
+	@echo [del] build
+	@for %%G in (build/*) do if not "%%~G" == "README.txt" del /f "build\%%~G"
+	@echo [del] BIN
+	@del /f binary\$(TARGET).elf
+	@del /f binary\$(TARGET).hex
+	@del /f binary\$(TARGET).bin
+	@del /f binary\$(TARGET).map
 
 flash:
 	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000
