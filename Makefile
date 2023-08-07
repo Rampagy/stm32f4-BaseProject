@@ -1,263 +1,145 @@
-# Makefile for Rootloader project
-.DEFAULT_GOAL := help
+TARGET:=FreeRTOS
+# TODO change to your ARM gcc toolchain path
+TOOLCHAIN_ROOT:=D:/Software/arm-gnu
+TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
+TOOLCHAIN_PREFIX:=arm-none-eabi
 
-WHEREAMI := $(dir $(lastword $(MAKEFILE_LIST)))
-ROOT_DIR := $(realpath $(WHEREAMI)/ )
+# Optimization level, can be [0, 1, 2, 3, s].
+OPTLVL:=0
+DBG:=-g
 
-# Define a recursive wildcard function
-# C.f. https://stackoverflow.com/a/18258352
-rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+FREERTOS:=$(CURDIR)/FreeRTOS
+STARTUP:=$(CURDIR)/hardware
+LINKER_SCRIPT:=$(CURDIR)/Utilities/stm32_flash.ld
 
-# Get the raw paths for all *.h files
-#RAW_TARGET_PATHS := $(call rwildcard,$(ROOT_DIR)/hwconf,*.h)
+INCLUDE=-I$(CURDIR)/hardware
+INCLUDE+=-I$(FREERTOS)/include
+INCLUDE+=-I$(FREERTOS)/portable/GCC/ARM_CM4F
+INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Device/ST/STM32F4xx/Include
+INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Include
+INCLUDE+=-I$(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/inc
+INCLUDE+=-I$(CURDIR)/config
 
-# Get the target paths by filtering out any core.h files, then stripping extra whitespace
-#TARGET_PATHS := $(strip $(filter-out %core.h,$(RAW_TARGET_PATHS)))
+BUILD_DIR = $(CURDIR)/build
+BIN_DIR = $(CURDIR)/binary
 
-# configure some directories that are relative to wherever ROOT_DIR is located
-TOOLS_DIR := $(ROOT_DIR)/tools
-MAKE_DIR := $(ROOT_DIR)/make
-BUILD_DIR := $(ROOT_DIR)/build
-DL_DIR    := $(ROOT_DIR)/downloads
+# vpath is used so object files are written to the current directory instead
+# of the same directory as their source files
+vpath %.c $(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/src \
+          $(CURDIR)/Libraries/syscall $(CURDIR)/hardware $(FREERTOS) \
+          $(FREERTOS)/portable/MemMang $(FREERTOS)/portable/GCC/ARM_CM4F 
 
-# import macros common to all supported build systems
-include $(ROOT_DIR)/make/system-id.mk
+vpath %.s $(STARTUP)
+ASRC=startup_stm32f4xx.s
 
-# import macros that are OS specific
-include $(ROOT_DIR)/make/$(OSFAMILY).mk
+# Project Source Files
+SRC+=stm32f4xx_it.c
+SRC+=system_stm32f4xx.c
+SRC+=main.c
+SRC+=syscalls.c
 
-# include the tools makefile
-include $(ROOT_DIR)/make/tools.mk
+# FreeRTOS Source Files
+SRC+=port.c
+SRC+=list.c
+SRC+=queue.c
+SRC+=tasks.c
+SRC+=event_groups.c
+SRC+=timers.c
+SRC+=heap_4.c
 
-# Clean out undesirable variables from the environment and command-line
-# to remove the chance that they will cause problems with our build
-define SANITIZE_VAR
-$(if $(filter-out undefined,$(origin $(1))),
-  $(info *NOTE*      Sanitized $(2) variable '$(1)' from $(origin $(1)))
-  MAKEOVERRIDES = $(filter-out $(1)=%,$(MAKEOVERRIDES))
-  override $(1) :=
-  unexport $(1)
-)
-endef
+# Standard Peripheral Source Files
+SRC+=misc.c
+SRC+=stm32f4xx_dcmi.c
+#SRC+=stm32f4xx_hash.c
+SRC+=stm32f4xx_rtc.c
+SRC+=stm32f4xx_adc.c
+SRC+=stm32f4xx_dma.c
+#SRC+=stm32f4xx_hash_md5.c
+SRC+=stm32f4xx_sai.c
+SRC+=stm32f4xx_can.c
+SRC+=stm32f4xx_dma2d.c
+#SRC+=stm32f4xx_hash_sha1.c
+SRC+=stm32f4xx_sdio.c
+SRC+=stm32f4xx_cec.c
+SRC+=stm32f4xx_dsi.c
+SRC+=stm32f4xx_i2c.c
+SRC+=stm32f4xx_spdifrx.c
+SRC+=stm32f4xx_crc.c
+SRC+=stm32f4xx_exti.c
+SRC+=stm32f4xx_iwdg.c
+SRC+=stm32f4xx_spi.c
+#SRC+=stm32f4xx_cryp.c
+SRC+=stm32f4xx_flash.c
+SRC+=stm32f4xx_lptim.c
+SRC+=stm32f4xx_syscfg.c
+#SRC+=stm32f4xx_cryp_aes.c
+SRC+=stm32f4xx_flash_ramfunc.c
+SRC+=stm32f4xx_ltdc.c
+SRC+=stm32f4xx_tim.c
+#SRC+=stm32f4xx_cryp_des.c
+#SRC+=stm32f4xx_fmc.c
+SRC+=stm32f4xx_pwr.c
+SRC+=stm32f4xx_usart.c
+#SRC+=stm32f4xx_cryp_tdes.c
+SRC+=stm32f4xx_fmpi2c.c
+SRC+=stm32f4xx_qspi.c
+SRC+=stm32f4xx_wwdg.c
+SRC+=stm32f4xx_dac.c
+SRC+=stm32f4xx_fsmc.c
+SRC+=stm32f4xx_rcc.c
+SRC+=stm32f4xx_dbgmcu.c
+SRC+=stm32f4xx_gpio.c
+SRC+=stm32f4xx_rng.c
 
-# These specific variables can influence gcc in unexpected (and undesirable) ways
-SANITIZE_GCC_VARS := TMPDIR GCC_EXEC_PREFIX COMPILER_PATH LIBRARY_PATH
-SANITIZE_GCC_VARS += CFLAGS CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH OBJC_INCLUDE_PATH DEPENDENCIES_OUTPUT
-SANITIZE_GCC_VARS += ARCHFLAGS
-$(foreach var, $(SANITIZE_GCC_VARS), $(eval $(call SANITIZE_VAR,$(var),disallowed)))
+CDEFS=-DUSE_STDPERIPH_DRIVER
+CDEFS+=-DSTM32F4XX
+CDEFS+=-DSTM32F40_41xxx
+CDEFS+=-DHSE_VALUE=8000000
+CDEFS+=-D__FPU_PRESENT=1
+CDEFS+=-D__FPU_USED=1
+CDEFS+=-DARM_MATH_CM4
 
-# These specific variables used to be valid but now they make no sense
-SANITIZE_DEPRECATED_VARS := FOO_BAR
-$(foreach var, $(SANITIZE_DEPRECATED_VARS), $(eval $(call SANITIZE_VAR,$(var),deprecated)))
+MCUFLAGS=-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -finline-functions -Wdouble-promotion -std=gnu99
+COMMONFLAGS=-O$(OPTLVL) $(DBG) -Wall -ffunction-sections -fdata-sections
+CFLAGS=$(COMMONFLAGS) $(MCUFLAGS) $(INCLUDE) $(CDEFS)
 
-# Decide on a verbosity level based on the V= parameter
-export AT := @
+LDLIBS=-lm -lc -lgcc
+LDFLAGS=$(MCUFLAGS) -u _scanf_float -u _printf_float -fno-exceptions -Wl,--gc-sections,-T$(LINKER_SCRIPT),-Map,$(BIN_DIR)/$(TARGET).map
 
-ifndef V
-export V0    :=
-export V1    := $(AT)
-else ifeq ($(V), 0)
-export V0    := $(AT)
-export V1    := $(AT)
-else ifeq ($(V), 1)
-endif
+CC=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-gcc
+LD=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-gcc
+OBJCOPY=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-objcopy
+AS=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-as
+AR=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-ar
+GDB=$(TOOLCHAIN_PATH)/$(TOOLCHAIN_PREFIX)-gdb
 
+OBJ = $(SRC:%.c=$(BUILD_DIR)/%.o)
 
-##############################
-#
-# Help instructions
-#
-##############################
-.PHONY: help
-help:
-	@echo ""
-	@echo "   This Makefile is known to work on Windows in a standard shell environment."
-	@echo ""
-	@echo "   Here is a summary of the available targets:"
-	@echo ""
-	@echo "   [Tool Installers]"
-	@echo "     arm_sdk_install      - Install the GNU ARM gcc toolchain"
-	@echo ""
-	@echo "   [Big Hammer]"
-	@echo "     all_fw               - Build firmware for all boards"
-	@echo "     all_fw_package       - Package firmware for boards in package list"
-	@echo ""
-	@echo "   [Unit Tests]"
-	@echo "     all_ut               - Build all unit tests"
-	@echo "     all_ut_xml           - Run all unit tests and capture all XML output to files"
-	@echo "     all_ut_run           - Run all unit tests and dump XML output to console"
-	@echo ""
-	@echo "   [Firmware]"
-	@echo "     fw   - Build firmware for default target"
-	@echo "                            supported boards are: $(ALL_BOARD_NAMES)"
-	@echo "     fw_<board>   - Build firmware for target <board>"
-	@echo "     PROJECT=<target> fw   - Build firmware for <target>"
-	@echo "     fw_<board>_clean     - Remove firmware for <board>"
-	@echo "     fw_<board>_flash     - Use OpenOCD + SWD/JTAG to write firmware to <target>"
-	@echo ""
-	@echo "   Hint: Add V=1 to your command line to see verbose build output."
-	@echo ""
-	@echo "   Note: All tools will be installed into $(TOOLS_DIR)"
-	@echo "         All build output will be placed in $(BUILD_DIR)"
-	@echo ""
+$(BUILD_DIR)/%.o: %.c
+	@echo [CC] $(notdir $<)
+	@$(CC) $(CFLAGS) $< -c -o $@
 
+all: $(OBJ)
+	@echo [AS] $(ASRC)
+	@$(AS) -o $(ASRC:%.s=$(BUILD_DIR)/%.o) $(STARTUP)/$(ASRC)
+	@echo [LD] $(TARGET).elf
+	@$(CC) -o $(BIN_DIR)/$(TARGET).elf $(LDFLAGS) $(OBJ) $(ASRC:%.s=$(BUILD_DIR)/%.o) $(LDLIBS)
+	@echo [HEX] $(TARGET).hex
+	@$(OBJCOPY) -O ihex $(BIN_DIR)/$(TARGET).elf $(BIN_DIR)/$(TARGET).hex
+	@echo [BIN] $(TARGET).bin
+	@$(OBJCOPY) -O binary $(BIN_DIR)/$(TARGET).elf $(BIN_DIR)/$(TARGET).bin
 
-$(DL_DIR):
-	$(V1) $(MKDIR) $@
+.PHONY: clean
 
-$(TOOLS_DIR):
-	$(V1) $(MKDIR) $@
+clean:
+	# Known issue this does not work in windows...
+	@echo [RM] OBJ
+	@rm -f $(OBJ)
+	@rm -f $(ASRC:%.s=$(BUILD_DIR)/%.o)
+	@echo [RM] BIN
+	@rm -f $(BIN_DIR)/$(TARGET).elf
+	@rm -f $(BIN_DIR)/$(TARGET).hex
+	@rm -f $(BIN_DIR)/$(TARGET).bin
 
-##############################
-#
-# Build and Upload
-#
-##############################
-
-# $(1) = Canonical board name all in lower case (e.g. 100_250)
-# $(2) = firmware build directory
-# $(3) = firmware name
-# $(4) = git branch name
-# $(5) = git hash (and dirty flag)
-# $(6) = compiler version
-define FW_TEMPLATE
-.PHONY: $(1) fw_$(1)
-$(1): fw_$(1)_fw
-fw_$(1): fw_$(1)_fw
-
-fw_$(1)_fw:
-	@echo "********* BUILD: $(1) **********"
-	$(V1) $(MKDIR) $(BUILD_DIR)/$(1)
-	$(V1) $$(MAKE) -f $(MAKE_DIR)/fw.mk \
-		TCHAIN_PREFIX="$(ARM_SDK_PREFIX)" \
-		BUILDDIR="$(2)" \
-		PROJECT="$(3)" \
-		build_args='-DHW_SOURCE=\"$(HW_SRC_FILE)\" -DHW_HEADER=\"$(HW_DIR)/hw_$(1).h\" -DGIT_BRANCH_NAME=\"$(4)\" -DGIT_COMMIT_HASH=\"$(5)\" -DARM_GCC_VERSION=\"$(6)\"' USE_VERBOSE_COMPILE=no
-
-$(1)_flash: fw_$(1)_flash
-fw_$(1)_flash: fw_$(1)_vescfw fw_$(1)_flash_only
-
-$(1)_flash_only: fw_$(1)_flash_only
-fw_$(1)_flash_only:
-	@echo "********* PROGRAM: $(1) **********"
-	$(V1) openocd -f board/stm32f4discovery.cfg -c "reset_config trst_only combined" -c "program $(2)/$(3).elf verify reset exit"
-
-.PHONY: $(1)_clean
-$(1)_clean: fw_$(1)_clean
-fw_$(1)_clean: TARGET=fw_$(1)
-fw_$(1)_clean: OUTDIR=$(BUILD_DIR)/$$(TARGET)
-fw_$(1)_clean:
-	$(V0) @echo " CLEAN      $$@"
-ifneq ($(OSFAMILY), windows)
-	$(V1) [ ! -d "$(BUILD_DIR)/$(1)" ] || $(RM) -r "$(BUILD_DIR)/$(1)"
-	$(V1) [ ! -d "$(ROOT_DIR)/.dep" ] || $(RM) -r "$(ROOT_DIR)/.dep"
-else
-	$(V1) powershell -noprofile -command "& {if (Test-Path $(BUILD_DIR)/$(1)) {Remove-Item -Recurse $(BUILD_DIR)/$(1)}}"
-	$(V1) powershell -noprofile -command "& {if (Test-Path $(ROOT_DIR)/.dep) {Remove-Item -Recurse $(ROOT_DIR)/.dep}}"
-endif
-endef
-
-clear_option_bytes:
-	$(V1) openocd -f board/stm32f4discovery.cfg -c "init" -c "stm32f2x unlock 0" -c "mww 0x40023C08 0x08192A3B; mww 0x40023C08 0x4C5D6E7F; mww 0x40023C14 0x0fffaaed" -c "exit"
-
-#program with olimex arm-usb-tiny-h and jtag-swd adapter board. needs openocd>=0.9
-upload-olimex: fw
-	$(V1) openocd -f interface/ftdi/olimex-arm-usb-tiny-h.cfg -f interface/ftdi/olimex-arm-jtag-swd.cfg -c "set WORKAREASIZE 0x2000" -f target/stm32f4x.cfg -c "program build/$(PROJECT).elf verify reset"
-
-upload-pi: fw
-	$(V1) openocd -f pi_stm32.cfg -c "reset_config trst_only combined" -c "program build/$(PROJECT).elf verify reset exit"
-
-upload-pi-remote: fw
-	$(V1) ./upload_remote_pi build/$(PROJECT).elf ted 10.42.0.199 22
-
-debug-start:
-	$(V1) openocd -f stm32-bv_openocd.cfg
-
-size: build/$(PROJECT).elf
-	@$(SZ) $<
-
-# Generate the targets for whatever boards are in each list
-FW_TARGETS := $(addprefix fw_, $(ALL_BOARD_NAMES))
-
-.PHONY: all_fw all_fw_clean
-all_fw:        $(addsuffix _vescfw, $(FW_TARGETS))
-all_fw_clean:  $(addsuffix _clean,  $(FW_TARGETS))
-
-# Expand the firmware rules
-$(foreach board, $(ALL_BOARD_NAMES), $(eval $(call FW_TEMPLATE,$(board),$(BUILD_DIR)/$(board),$(board),$(GIT_BRANCH_NAME),$(GIT_COMMIT_HASH)$(GIT_DIRTY_LABEL),$(ARM_GCC_VERSION))))
-
-
-
-##############################
-#
-# Unit Tests
-#
-##############################
-
-ALL_UNITTESTS := utils_math
-
-UT_OUT_DIR := $(BUILD_DIR)/unit_tests
-
-$(UT_OUT_DIR):
-	$(V1) $(MKDIR) $@
-
-.PHONY: all_ut
-all_ut: $(addsuffix _elf, $(addprefix ut_, $(ALL_UNITTESTS))) $(ALL_PYTHON_UNITTESTS)
-
-.PHONY: all_ut_xml
-all_ut_xml: $(addsuffix _xml, $(addprefix ut_, $(ALL_UNITTESTS)))
-
-.PHONY: all_ut_run
-all_ut_run: $(addsuffix _run, $(addprefix ut_, $(ALL_UNITTESTS))) $(ALL_PYTHON_UNITTESTS)
-
-.PHONY: all_ut_gcov
-all_ut_gcov: | $(addsuffix _gcov, $(addprefix ut_, $(ALL_UNITTESTS)))
-
-.PHONY: all_ut_clean
-all_ut_clean:
-	$(V0) @echo " CLEAN      $@"
-	$(V1) [ ! -d "$(UT_OUT_DIR)" ] || $(RM) -r "$(UT_OUT_DIR)"
-
-# $(1) = Unit test name
-define UT_TEMPLATE
-.PHONY: ut_$(1)
-ut_$(1): ut_$(1)_run
-ut_$(1)_gcov: | ut_$(1)_xml
-
-ut_$(1)_%: TARGET=$(1)
-ut_$(1)_%: OUTDIR=$(UT_OUT_DIR)/$$(TARGET)
-ut_$(1)_%: UT_ROOT_DIR=$(ROOT_DIR)/tests/$(1)
-ut_$(1)_%: $$(UT_OUT_DIR)
-	$(V1) $(MKDIR) $(UT_OUT_DIR)/$(1)
-	$(V1) cd $$(UT_ROOT_DIR) && \
-		$$(MAKE) -r --no-print-directory \
-		BUILD_TYPE=ut \
-		TCHAIN_PREFIX="" \
-		REMOVE_CMD="$(RM)" \
-		\
-		MAKE_INC_DIR=$(MAKE_INC_DIR) \
-		ROOT_DIR=$(ROOT_DIR) \
-		TARGET=$$(TARGET) \
-		OUTDIR=$$(OUTDIR) \
-		\
-		GTEST_DIR=$(GTEST_DIR) \
-		\
-		$$*
-
-.PHONY: ut_$(1)_clean
-ut_$(1)_clean: TARGET=$(1)
-ut_$(1)_clean: OUTDIR=$(UT_OUT_DIR)/$$(TARGET)
-ut_$(1)_clean:
-	$(V0) @echo " CLEAN      $(1)"
-	$(V1) [ ! -d "$$(OUTDIR)" ] || $(RM) -r "$$(OUTDIR)"
-endef
-
-# Expand the unittest rules
-$(foreach ut, $(ALL_UNITTESTS), $(eval $(call UT_TEMPLATE,$(ut))))
-
-# Disable parallel make when the all_ut_run target is requested otherwise the TAP/XML
-# output is interleaved with the rest of the make output.
-ifneq ($(strip $(filter all_ut_run,$(MAKECMDGOALS))),)
-.NOTPARALLEL:
-$(info *NOTE*     Parallel make disabled by all_ut_run target so we have sane console output)
-endif
+flash:
+	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000

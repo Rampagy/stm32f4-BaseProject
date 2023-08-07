@@ -1,57 +1,54 @@
-# STM32F4-BaseProject
-Starter project for the STM32F407 microcontroller
+# STM32F4-FreeRTOS
 
-## Prerequisites
+A demo project of FreeRTOS running on a STM32F4 Discovery board.
 
-### On Ubuntu (Linux)/macOS
-- Tools: `git`, `wget`, `make`, and `python`
-- Additional Linux requirements: `libgl-dev` and `libxcb-xinerama0`
-- Helpful Ubuntu commands:
-```bash
-sudo apt install git build-essential libgl-dev libxcb-xinerama0 wget git-gui
+## Steps to run this example
+
+### Prerequisite
+
+1. A PC running Linux or Windows with Cygwin(not tested). A Mac is also fine with this example.
+2. A STM32F4Discovery board.
+3. A FT232RL USB to serial board which is recommended if there's no serial port on your computer.
+4. USB Cable, Dupont Line and other tools.
+
+### Install the toolchain
+
+The pre-built version of GNU Tools for ARM can be downloaded from its [website](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). It's available for most systems. Follow the instructions in the readme file and installed the toolchain to your system. To verify your installation, simply type `arm-none-eabi-gcc --version` in your terminal, if everything goes right, you'll get output like this:
+
 ```
-- Helpful macOS tools: 
-
-```bash
-brew install stlink
-brew install openocd
+arm-none-eabi-gcc (Arm GNU Toolchain 12.3.Rel1 (Build arm-12.35)) 12.3.1 20230626
+Copyright (C) 2022 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
 
-### On Windows
-- Python: https://www.python.org/downloads/
-- Chocolately: https://chocolatey.org/install
-- Git: https://git-scm.com/download/win. Make sure to click any boxes to add Git to your Environment (aka PATH)
+### Install ST-Link utility
 
-## Install Dev environment and build
+#### Windows
+Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the st-util.
 
-### On Ubuntu (Linux)/MacOS
-Open up a terminal
-1.  `git clone git@github.com:Rampagy/stm32f4-BaseProject.git`
-1.  `cd stm32f4-BaseProject`
-1.  Continue with [On all platforms](#on-all-platforms)
+#### Linux and OS X
+Clone this [git](https://github.com/texane/stlink), follow the instructions on that page and install st-util to your system.
 
-### On Windows
+### Compile this example
+The only thing you need to do is to edit the makefile and let it know your toolchain installation path. Change the `TOOLCHARN_ROOT` variable at the third line of makefile and point it to where you installed the toolchain. The you can simply type `make` and compile the example.
 
-1.  Open up a Windows Powershell terminal (Resist the urge to run Powershell as administrator, that will break things)
-1.  Type `choco install make`
-1.  `git clone git@github.com:Rampagy/stm32f4-BaseProject.git`
-1.  `cd stm32f4-BaseProject`
-1.  Continue with [On all platforms](#on-all-platforms)
+### Debug
+Connect your STM32F4Discovery with a USB cable. You can flash the binary into the board with this:
 
-### On all platforms
+`$ st-flash write binary/FreeRTOS.bin 0x8000000`
 
-1.  `git checkout origin/master`
-1.  `make arm_sdk_install`
-1.  `make fw` <-- This will build the firmware and place it into the `stm32f4-BaseProject/builds/` directory
+The code is wrote directly into internal flash of STM32 processor and it starts to run after reset. To debug it, first start the GDB server:
 
-## Important links
+`$ st-util &`
 
-https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug
+And then GDB:
 
-https://marketplace.visualstudio.com/items?itemName=ms-vscode.makefile-tools
+```
+$ arm-none-eabi-gdb binary/FreeRTOS.elf
+(gdb) tar ext :4242
+(gdb) b main
+(gdb) c
+```
 
-https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools-extension-pack
-
-https://openocd.org/
-
-http://sigalrm.blogspot.com/2014/01/overclocking-stm32f4.html?m=1
+You'll get breakpoint triggered at `main` function, and enjoy!
