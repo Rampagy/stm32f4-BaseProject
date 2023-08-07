@@ -5,7 +5,7 @@ TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
 TOOLCHAIN_PREFIX:=arm-none-eabi
 
 # Optimization level, can be [0, 1, 2, 3, s].
-OPTLVL:=0
+OPTLVL:=2
 DBG:=-g
 
 FREERTOS:=$(CURDIR)/FreeRTOS
