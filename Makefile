@@ -129,9 +129,9 @@ all: $(OBJ)
 	@echo [BIN] $(TARGET).bin
 	@$(OBJCOPY) -O binary $(BIN_DIR)/$(TARGET).elf $(BIN_DIR)/$(TARGET).bin
 
-.PHONY: clean
+.PHONY: clean_windows
 
-clean:
+clean_windows:
 	@echo [del] build
 	@for %%G in (build/*) do if not "%%~G" == "README.txt" del /f "build\%%~G"
 	@echo [del] BIN
@@ -139,6 +139,17 @@ clean:
 	@del /f binary\$(TARGET).hex
 	@del /f binary\$(TARGET).bin
 	@del /f binary\$(TARGET).map
+
+.PHONY: clean_linux
+
+clean_linux:
+	@echo [RM] OBJ
+	@rm -f $(OBJ)
+	@rm -f $(ASRC:%.s=$(BUILD_DIR)/%.o)
+	@echo [RM] BIN
+	@rm -f $(BIN_DIR)/$(TARGET).elf
+	@rm -f $(BIN_DIR)/$(TARGET).hex
+	@rm -f $(BIN_DIR)/$(TARGET).bin
 
 flash:
 	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000
