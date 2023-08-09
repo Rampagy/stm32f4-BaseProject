@@ -4,6 +4,7 @@
 #include "math.h"
 #include "stdio.h"
 #include "stm32f4xx_usart.h"
+#include "arm_math.h"
 
 // Macro to use CCM (Core Coupled Memory) in STM32F4
 #define CCM_RAM __attribute__((section(".ccmram")))
@@ -107,11 +108,17 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 
 void test_FPU_test(void* p) {
   float ff = 1.0f;
+
+  float f1[5] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+  float fr = 0.0f;
+  uint32_t fi = 0;
+
   printf("Start FPU test task.\n");
   for (;;) {
     float s = sinf(ff);
     ff += s;
-    // TODO some other test
+
+    arm_min_f32(&f1[0], (uint32_t)(sizeof(f1)/sizeof(float)), &fr, &fi);
 
     vTaskDelay(1000);
   }

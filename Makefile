@@ -12,11 +12,16 @@ FREERTOS:=$(CURDIR)/FreeRTOS
 STARTUP:=$(CURDIR)/hardware
 LINKER_SCRIPT:=$(CURDIR)/Utilities/stm32_flash.ld
 
+# Path to CMSIS-DSP
+CMSIS_DSP := $(CURDIR)/Libraries/CMSIS/DSP
+
 INCLUDE=-I$(CURDIR)/hardware
 INCLUDE+=-I$(FREERTOS)/include
 INCLUDE+=-I$(FREERTOS)/portable/GCC/ARM_CM4F
 INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Device/ST/STM32F4xx/Include
-INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Include
+INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Core/Include
+INCLUDE+=-I$(CMSIS_DSP)/Include
+INCLUDE+=-I$(CMSIS_DSP)/PrivateInclude
 INCLUDE+=-I$(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/inc
 INCLUDE+=-I$(CURDIR)/config
 
@@ -27,7 +32,22 @@ BIN_DIR = $(CURDIR)/binary
 # of the same directory as their source files
 vpath %.c $(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/src \
           $(CURDIR)/Libraries/syscall $(CURDIR)/hardware $(FREERTOS) \
-          $(FREERTOS)/portable/MemMang $(FREERTOS)/portable/GCC/ARM_CM4F 
+          $(FREERTOS)/portable/MemMang $(FREERTOS)/portable/GCC/ARM_CM4F \
+          $(CMSIS_DSP)/Source/BasicMathFunctions \
+          $(CMSIS_DSP)/Source/CommonTables \
+          $(CMSIS_DSP)/Source/InterpolationFunctions \
+          $(CMSIS_DSP)/Source/BayesFunctions \
+          $(CMSIS_DSP)/Source/MatrixFunctions \
+          $(CMSIS_DSP)/Source/ComplexMathFunctions \
+          $(CMSIS_DSP)/Source/QuaternionMathFunctions \
+          $(CMSIS_DSP)/Source/ControllerFunctions \
+          $(CMSIS_DSP)/Source/SVMFunctions \
+          $(CMSIS_DSP)/Source/DistanceFunctions \
+          $(CMSIS_DSP)/Source/StatisticsFunctions \
+          $(CMSIS_DSP)/Source/FastMathFunctions \
+          $(CMSIS_DSP)/Source/SupportFunctions \
+          $(CMSIS_DSP)/Source/FilteringFunctions \
+          $(CMSIS_DSP)/Source/TransformFunctions \
 
 vpath %.s $(STARTUP)
 ASRC=startup_stm32f4xx.s
@@ -46,6 +66,23 @@ SRC+=tasks.c
 SRC+=event_groups.c
 SRC+=timers.c
 SRC+=heap_4.c
+
+# DSP Source Files
+SRC+=BasicMathFunctions.c
+SRC+=CommonTables.c
+SRC+=InterpolationFunctions.c
+SRC+=BayesFunctions.c
+SRC+=MatrixFunctions.c
+SRC+=ComplexMathFunctions.c
+SRC+=QuaternionMathFunctions.c
+SRC+=ControllerFunctions.c
+SRC+=SVMFunctions.c
+SRC+=DistanceFunctions.c
+SRC+=StatisticsFunctions.c
+SRC+=FastMathFunctions.c
+SRC+=SupportFunctions.c
+SRC+=FilteringFunctions.c
+SRC+=TransformFunctions.c
 
 # Standard Peripheral Source Files
 SRC+=misc.c
@@ -150,6 +187,8 @@ clean_linux:
 	@rm -f $(BIN_DIR)/$(TARGET).elf
 	@rm -f $(BIN_DIR)/$(TARGET).hex
 	@rm -f $(BIN_DIR)/$(TARGET).bin
+
+.PHONY: flash
 
 flash:
 	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000
