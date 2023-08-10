@@ -4,8 +4,12 @@ TOOLCHAIN_ROOT:=D:/Software/arm-gnu
 TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
 TOOLCHAIN_PREFIX:=arm-none-eabi
 
+TEST_ROOT:=
+TEST_PATH:=
+TEST_PREFIX:=gcc
+
 # Default number of jobs (cores/threads) to compile with
-CPUS:=64
+CPUS:=8
 
 # Optimization level, can be [0, 1, 2, 3, s].
 OPTLVL:=2
@@ -139,7 +143,6 @@ CDEFS+=-DSTM32F4XX
 CDEFS+=-DSTM32F40_41xxx
 CDEFS+=-DHSE_VALUE=8000000
 CDEFS+=-D__FPU_PRESENT=1
-CDEFS+=-D__FPU_USED=1
 CDEFS+=-DARM_MATH_CM4
 
 MCUFLAGS=-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -finline-functions -Wdouble-promotion -std=gnu99
@@ -172,8 +175,30 @@ all: $(OBJ)
 	@echo [BIN] $(TARGET).bin
 	@$(OBJCOPY) -O binary $(BIN_DIR)/$(TARGET).elf $(BIN_DIR)/$(TARGET).bin
 
-.PHONY: clean_windows
 
+TEST_INCLUDE=-I$(CURDIR)/Unity
+
+# Test source files
+TEST_SRC+=$(CURDIR)/test_main.c
+TEST_SRC+=$(CURDIR)/Unity/unity.c
+
+TEST_CDEFS=
+
+TEST_FLAGS=-Wdouble-promotion -m32 -Wextra -std=gnu99
+TEST_CFLAGS=$(COMMONFLAGS) $(TEST_FLAGS) $(TEST_INCLUDE) $(TEST_CDEFS)
+
+TEST_CC=$(TEST_PREFIX)
+
+test_main: $(TEST_SRC)
+	@echo Building tests...
+	@$(TEST_CC) $(TEST_CFLAGS) $^ -o $@
+
+tests: test_main
+	@echo Running tests...
+	@test_main
+
+
+.PHONY: clean_windows
 clean_windows:
 	@echo [del] build
 	@for %%G in (build/*) do if not "%%~G" == "README.txt" del /f "build\%%~G"
@@ -182,9 +207,10 @@ clean_windows:
 	@del /f binary\$(TARGET).hex
 	@del /f binary\$(TARGET).bin
 	@del /f binary\$(TARGET).map
+	@del /f test_main.exe
+
 
 .PHONY: clean_linux
-
 clean_linux:
 	@echo [RM] OBJ
 	@rm -f $(OBJ)
@@ -193,8 +219,9 @@ clean_linux:
 	@rm -f $(BIN_DIR)/$(TARGET).elf
 	@rm -f $(BIN_DIR)/$(TARGET).hex
 	@rm -f $(BIN_DIR)/$(TARGET).bin
+	@rm -f $(BIN_DIR)/$(TARGET).map
+
 
 .PHONY: flash
-
 flash:
 	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000
