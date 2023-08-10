@@ -4,16 +4,21 @@ TOOLCHAIN_ROOT:=D:/Software/arm-gnu
 TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
 TOOLCHAIN_PREFIX:=arm-none-eabi
 
+# Default number of jobs (cores/threads) to compile with
+CPUS:=64
+
 # Optimization level, can be [0, 1, 2, 3, s].
 OPTLVL:=2
 DBG:=-g
+
+MAKEFLAGS += --jobs=$(CPUS)
 
 FREERTOS:=$(CURDIR)/FreeRTOS
 STARTUP:=$(CURDIR)/hardware
 LINKER_SCRIPT:=$(CURDIR)/Utilities/stm32_flash.ld
 
 # Path to CMSIS-DSP
-CMSIS_DSP := $(CURDIR)/Libraries/CMSIS/DSP
+CMSIS_DSP:=$(CURDIR)/Libraries/CMSIS/DSP
 
 INCLUDE=-I$(CURDIR)/hardware
 INCLUDE+=-I$(FREERTOS)/include
