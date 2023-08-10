@@ -6,7 +6,7 @@ A demo project of FreeRTOS running on a STM32F4 Discovery board.
 
 ### Prerequisite
 
-1. A PC running Linux or Windows with Cygwin(not tested). A Mac is also fine with this example.
+1. A PC running Linux(not tested) or Windows with Cygwin.
 2. A STM32F4Discovery board.
 3. A FT232RL USB to serial board which is recommended if there's no serial port on your computer.
 4. USB Cable, Dupont Line and other tools.
