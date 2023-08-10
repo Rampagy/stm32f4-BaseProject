@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_qspi.c
   * @author  MCD Application Team
-  * @version V1.6.1
-  * @date    21-October-2015
+  * @version V1.8.1
+  * @date    27-January-2022
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Serial peripheral interface (QSPI):
   *           + Initialization and Configuration
@@ -61,19 +61,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2015 STMicroelectronics</center></h2>
+  * Copyright (c) 2016 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under MCD-ST Liberty SW License Agreement V2, (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/software_license_agreement_liberty_v2
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -89,7 +82,7 @@
   * @brief QSPI driver modules
   * @{
   */
-#if defined(STM32F446xx) || defined(STM32F469_479xx)
+#if defined(STM32F412xG) || defined(STM32F413_423xx) || defined(STM32F446xx) || defined(STM32F469_479xx)
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define QSPI_CR_CLEAR_MASK                           0x00FFFFCF
@@ -346,7 +339,7 @@ void QSPI_AutoPollingMode_Config(uint32_t QSPI_Match, uint32_t QSPI_Mask , uint3
   /* Check the parameters */
   assert_param(IS_QSPI_PMM(QSPI_Match_Mode));
 
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Set the Match Register */
@@ -385,7 +378,7 @@ void QSPI_AutoPollingMode_SetInterval(uint32_t QSPI_Interval)
   /* Check the parameters */
   assert_param(IS_QSPI_PIR(QSPI_Interval));
 
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Read the PIR Register */
@@ -415,7 +408,7 @@ void QSPI_MemoryMappedMode_SetTimeout(uint32_t QSPI_Timeout)
   /* Check the parameters */
   assert_param(IS_QSPI_TIMEOUT(QSPI_Timeout));
 
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Read the LPTR Register */
@@ -438,7 +431,7 @@ void QSPI_MemoryMappedMode_SetTimeout(uint32_t QSPI_Timeout)
   */
 void QSPI_SetAddress(uint32_t QSPI_Address)
 {
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Write the AR Register */
@@ -455,7 +448,7 @@ void QSPI_SetAddress(uint32_t QSPI_Address)
   */
 void QSPI_SetAlternateByte(uint32_t QSPI_AlternateByte)
 {
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Write the ABR Register */
@@ -510,7 +503,7 @@ void QSPI_SetFIFOThreshold(uint32_t QSPI_FIFOThreshold)
   */
 void QSPI_SetDataLength(uint32_t QSPI_DataLength)
 {
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     /* Write the DLR Register */
@@ -530,7 +523,7 @@ void QSPI_TimeoutCounterCmd(FunctionalState NewState)
   /* Check the parameters */
   assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     if (NewState != DISABLE)
@@ -558,7 +551,7 @@ void QSPI_AutoPollingModeStopCmd(FunctionalState NewState)
   /* Check the parameters */
   assert_param(IS_FUNCTIONAL_STATE(NewState));
 
-  if (!(QUADSPI->SR & QUADSPI_SR_BUSY))
+  if ((QUADSPI->SR & QUADSPI_SR_BUSY) == RESET)
   /* Device is not Busy */
   {
     if (NewState != DISABLE)
@@ -775,7 +768,7 @@ FlagStatus QSPI_GetFlagStatus(uint32_t QSPI_FLAG)
   assert_param(IS_QSPI_GET_FLAG(QSPI_FLAG));
 
   /* Check the status of the specified QSPI flag */
-  if (QUADSPI->SR & QSPI_FLAG)
+  if((QUADSPI->SR & QSPI_FLAG) != RESET)
   {
     /* QSPI_FLAG is set */
     bitstatus = SET;
@@ -822,7 +815,7 @@ void QSPI_ClearFlag(uint32_t QSPI_FLAG)
 ITStatus QSPI_GetITStatus(uint32_t QSPI_IT)
 {
   ITStatus bitstatus = RESET;
-  __IO uint32_t tmpcreg = 0, tmpsreg = 0; 
+  uint32_t tmpcreg = 0, tmpsreg = 0; 
 
   /* Check the parameters */
   assert_param(IS_QSPI_IT(QSPI_IT));
@@ -898,7 +891,7 @@ void QSPI_DualFlashMode_Cmd(FunctionalState NewState)
 /**
   * @}
   */
-#endif /* STM32F446xx || STM32F469_479xx */
+#endif /* STM32F412xG || STM32F413_423xx || STM32F446xx || STM32F469_479xx */
 
 /**
   * @}
@@ -908,4 +901,3 @@ void QSPI_DualFlashMode_Cmd(FunctionalState NewState)
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
