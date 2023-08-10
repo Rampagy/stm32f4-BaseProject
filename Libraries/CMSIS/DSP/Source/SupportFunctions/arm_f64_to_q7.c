@@ -135,7 +135,7 @@ void arm_f64_to_q7(
 
 #else
 
-    *pDst++ = (q7_t) __SSAT((q31_t) (*pIn++ * 128.0), 8);
+    *pDst++ = (q7_t) __SSAT((q31_t) (*pIn++ * (float64_t)128.0), 8);
 
 #endif /* #ifdef ARM_MATH_ROUNDING */
 

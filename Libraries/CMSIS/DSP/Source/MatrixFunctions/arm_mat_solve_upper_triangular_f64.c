@@ -194,7 +194,7 @@ arm_status arm_mat_solve_upper_triangular_f64(
                     tmp -= ut_row[k] * pX[cols*k+j];
                 }
                 
-                if (ut_row[i]==0.0)
+                if (ut_row[i]==(float64_t)0.0)
                 {
                     return(ARM_MATH_SINGULAR);
                 }

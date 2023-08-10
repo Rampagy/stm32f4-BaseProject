@@ -136,7 +136,7 @@ void arm_f64_to_q15(
 
     /* C = A * 32768 */
     /* Convert from float to q15 and then store the results in the destination buffer */
-    *pDst++ = (q15_t) __SSAT((q31_t) (*pIn++ * 32768.0), 16);
+    *pDst++ = (q15_t) __SSAT((q31_t) (*pIn++ * (float64_t)32768.0), 16);
 
 #endif /* #ifdef ARM_MATH_ROUNDING */
 

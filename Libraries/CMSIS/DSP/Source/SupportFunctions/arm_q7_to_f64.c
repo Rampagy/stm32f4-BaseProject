@@ -96,7 +96,7 @@ void arm_q7_to_f64(
     /* C = (float64_t) A / 128 */
 
     /* Convert from q7 to float and store result in destination buffer */
-    *pDst++ = ((float64_t) * pIn++ / 128.0);
+    *pDst++ = ((float64_t) * pIn++ / (float64_t)128.0);
 
     /* Decrement loop counter */
     blkCnt--;

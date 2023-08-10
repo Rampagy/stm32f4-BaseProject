@@ -97,7 +97,7 @@ void arm_q31_to_f64(
     /* C = (float64_t) A / 2147483648 */
 
     /* Convert from q31 to float and store result in destination buffer */
-    *pDst++ = ((float64_t) *pIn++ / 2147483648.0);
+    *pDst++ = ((float64_t) *pIn++ / (float64_t)2147483648.0);
 
     /* Decrement loop counter */
     blkCnt--;

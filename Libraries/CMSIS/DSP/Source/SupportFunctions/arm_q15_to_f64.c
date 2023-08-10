@@ -97,7 +97,7 @@ void arm_q15_to_f64(
     /* C = (float64_t) A / 32768 */
 
     /* Convert from q15 to float and store result in destination buffer */
-    *pDst++ = ((float64_t) *pIn++ / 32768.0);
+    *pDst++ = ((float64_t) *pIn++ / (float64_t)32768.0);
 
     /* Decrement loop counter */
     blkCnt--;

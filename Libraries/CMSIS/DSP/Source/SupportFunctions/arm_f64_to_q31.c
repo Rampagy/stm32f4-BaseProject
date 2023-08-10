@@ -141,7 +141,7 @@ void arm_f64_to_q31(
 
     /* C = A * 2147483648 */
     /* Convert from float to Q31 and then store the results in the destination buffer */
-    *pDst++ = clip_q63_to_q31((q63_t) (*pIn++ * 2147483648.0));
+    *pDst++ = clip_q63_to_q31((q63_t) (*pIn++ * (float64_t)2147483648.0));
 
 #endif /* #ifdef ARM_MATH_ROUNDING */
 

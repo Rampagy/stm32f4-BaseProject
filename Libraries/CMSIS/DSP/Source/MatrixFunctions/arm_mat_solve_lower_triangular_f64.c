@@ -206,7 +206,7 @@ arm_status arm_mat_solve_lower_triangular_f64(
                     tmp -= lt_row[k] * pX[cols*k+j];
                 }
                 
-                if (lt_row[i]==0.0)
+                if (lt_row[i]==(float64_t)0.0)
                 {
                     return(ARM_MATH_SINGULAR);
                 }

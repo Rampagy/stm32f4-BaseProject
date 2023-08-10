@@ -125,7 +125,7 @@ arm_status arm_mat_ldlt_f64(
 
         a = pA[k*n+k];
 
-        if (fabs(a) < 1.0e-18)
+        if (fabs(a) < (float64_t)1.0e-18)
         {
 
             fullRank = 0;
