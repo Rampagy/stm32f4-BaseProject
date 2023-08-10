@@ -12,7 +12,7 @@ TEST_PREFIX:=gcc
 CPUS:=128
 
 # Optimization level, can be [0, 1, 2, 3, s].
-OPTLVL:=2
+OPTLVL:=fast
 DBG:=-g
 
 MAKEFLAGS += --jobs=$(CPUS)
