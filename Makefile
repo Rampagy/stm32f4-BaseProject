@@ -9,7 +9,7 @@ TEST_PATH:=
 TEST_PREFIX:=gcc
 
 # Default number of jobs (cores/threads) to compile with
-CPUS:=8
+CPUS:=128
 
 # Optimization level, can be [0, 1, 2, 3, s].
 OPTLVL:=2
