@@ -1,6 +1,6 @@
 TARGET:=FreeRTOS
 # TODO change to your ARM gcc toolchain path
-TOOLCHAIN_ROOT:=D:/Software/arm-gnu
+TOOLCHAIN_ROOT:=../arm-none-eabi
 TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
 TOOLCHAIN_PREFIX:=arm-none-eabi
 
@@ -24,6 +24,7 @@ LINKER_SCRIPT:=$(CURDIR)/Utilities/stm32_flash.ld
 # Path to CMSIS-DSP
 CMSIS_DSP:=$(CURDIR)/Libraries/CMSIS/DSP
 
+INCLUDE=-I$(CURDIR)
 INCLUDE=-I$(CURDIR)/hardware
 INCLUDE+=-I$(FREERTOS)/include
 INCLUDE+=-I$(FREERTOS)/portable/GCC/ARM_CM4F
@@ -60,6 +61,9 @@ vpath %.c $(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/src \
 
 vpath %.s $(STARTUP)
 ASRC=startup_stm32f4xx.s
+
+# Application Files
+SRC+=blink_led.c
 
 # Project Source Files
 SRC+=stm32f4xx_it.c
@@ -195,7 +199,7 @@ test_main: $(TEST_SRC)
 
 tests: test_main
 	@echo Running tests...
-	@test_main
+	@./test_main
 
 
 .PHONY: clean_windows
@@ -220,6 +224,8 @@ clean_linux:
 	@rm -f $(BIN_DIR)/$(TARGET).hex
 	@rm -f $(BIN_DIR)/$(TARGET).bin
 	@rm -f $(BIN_DIR)/$(TARGET).map
+	@echo [RM] test
+	@rm -f test_main
 
 
 .PHONY: flash

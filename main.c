@@ -1,10 +1,9 @@
 #include "stm32f4xx.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "math.h"
 #include "stdio.h"
 #include "stm32f4xx_usart.h"
-#include "arm_math.h"
+#include "blink_led.h"
 
 // Macro to use CCM (Core Coupled Memory) in STM32F4
 #define CCM_RAM __attribute__((section(".ccmram")))
@@ -15,13 +14,23 @@ StackType_t fpuTaskStack[FPU_TASK_STACK_SIZE] CCM_RAM;  // Put task stack in CCM
 StaticTask_t fpuTaskBuffer CCM_RAM;  // Put TCB in CCM
 
 void init_USART3(void);
+void init_user_LED(void);
 
 void test_FPU_test(void* p);
+
+typedef enum 
+{
+  LED4 = 0,
+  LED3 = 1,
+  LED5 = 2,
+  LED6 = 3
+} Led_TypeDef;
 
 int main(void) {
   SystemInit();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
   init_USART3();
+  init_user_LED();
 
   // Create a task
   // Stack and TCB are placed in CCM of STM32F4
@@ -107,20 +116,33 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 }
 
 void test_FPU_test(void* p) {
-  float ff = 1.0f;
+  TickType_t xLastWakeTime;
 
-  float f1[5] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
-  float fr = 0.0f;
-  uint32_t fi = 0;
+  /* Initialize the xLastWakeTime variable with the current time. */
+  xLastWakeTime = xTaskGetTickCount();
 
-  printf("Start FPU test task.\n");
+  float angle = 0.0f;
+
+  printf("Start FPU/DSP test task.\n");
   for (;;) {
-    float s = sinf(ff);
-    ff += s;
+    angle += 1.0f;
 
-    arm_min_f32(&f1[0], (uint32_t)(sizeof(f1)/sizeof(float)), &fr, &fi);
+    if (blink(angle) == 1)
+    {
+      GPIOD->BSRR |= GPIO_Pin_12;
+    }
+    else
+    {
+      GPIOD->BSRR &= ~GPIO_Pin_12;
+    }
 
-    vTaskDelay(1000);
+    if (angle > 6.28318530718f)
+    {
+      angle -= 6.28318530718f;
+    }
+
+    /* Wait for the next cycle. */
+    vTaskDelayUntil( &xLastWakeTime, 1000 );
   }
 
   vTaskDelete(NULL);
@@ -154,4 +176,21 @@ void init_USART3(void) {
   USART_InitStruct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
   USART_Init(USART3, &USART_InitStruct);
   USART_Cmd(USART3, ENABLE);
+}
+
+
+void init_user_LED(void)
+{
+  GPIO_InitTypeDef  GPIO_InitStructure;
+  
+  /* Enable the GPIO_LED Clock */
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+
+  /* Configure the GPIO_LED pin */
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(GPIOD, &GPIO_InitStructure);
 }
