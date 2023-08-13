@@ -185,8 +185,9 @@ TEST_INCLUDE=-I$(CURDIR)/Unity
 # Test source files
 TEST_SRC+=$(CURDIR)/test_main.c
 TEST_SRC+=$(CURDIR)/Unity/unity.c
+TEST_SRC+=$(CURDIR)/blink_led.c
 
-TEST_CDEFS=
+TEST_CDEFS=-DTEST_COMPILE
 
 TEST_FLAGS=-Wdouble-promotion -m32 -Wextra -std=gnu99
 TEST_CFLAGS=$(COMMONFLAGS) $(TEST_FLAGS) $(TEST_INCLUDE) $(TEST_CDEFS)

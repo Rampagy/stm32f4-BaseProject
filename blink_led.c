@@ -9,7 +9,11 @@
 uint8_t blink(float angle)
 {
   uint8_t led_state = 0;
-  if (arm_sin_f32(angle) > 0)
+  #if defined(TEST_COMPILE)
+  if (sinf(angle) >= 0.0f)
+  #else // defined(TEST_COMPILE)
+  if (arm_sin_f32(angle) >= 0.0f)
+  #endif
   {
     led_state = 1;
   }

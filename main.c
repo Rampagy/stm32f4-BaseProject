@@ -18,14 +18,6 @@ void init_user_LED(void);
 
 void test_FPU_test(void* p);
 
-typedef enum 
-{
-  LED4 = 0,
-  LED3 = 1,
-  LED5 = 2,
-  LED6 = 3
-} Led_TypeDef;
-
 int main(void) {
   SystemInit();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
