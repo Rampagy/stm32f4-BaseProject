@@ -25,10 +25,20 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ### Install ST-Link utility
 
 #### Windows
-Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the st-util.
+Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the STM32CubeProgrammer.  Add the path to the STM32_Programmer_CLI to your enviroment variable `PATH`.
 
 #### Linux and OS X
+
+Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the STM32CubeProgrammer.  Add the path to the STM32_Programmer_CLI to your enviroment variable `PATH`.
+
+**Note:** Not tested
+
+or
+
 Clone this [git](https://github.com/texane/stlink), follow the instructions on that page and install st-util to your system.
+
+**Note:** Not tested
+
 
 ### Compile this example
 The only thing you need to do is to edit the makefile and let it know your toolchain installation path. Change the `TOOLCHARN_ROOT` variable at the third line of makefile and point it to where you installed the toolchain. The you can simply type `make` and compile the example.
@@ -36,7 +46,9 @@ The only thing you need to do is to edit the makefile and let it know your toolc
 ### Debug
 Connect your STM32F4Discovery with a USB cable. You can flash the binary into the board with this:
 
-`$ st-flash write binary/FreeRTOS.bin 0x8000000`
+`$ STM32_Programmer_CLI -c port=SWD -w binary/FreeRTOS.bin 0x8000000`
+
+** Note: ** Everything below this is not tested.
 
 The code is wrote directly into internal flash of STM32 processor and it starts to run after reset. To debug it, first start the GDB server:
 

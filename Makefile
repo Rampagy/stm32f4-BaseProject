@@ -4,6 +4,9 @@ TOOLCHAIN_ROOT:=../arm-none-eabi
 TOOLCHAIN_PATH:=$(TOOLCHAIN_ROOT)/bin
 TOOLCHAIN_PREFIX:=arm-none-eabi
 
+# TODO change to the port your stm debugger is using
+PORT:=SWD
+
 TEST_ROOT:=
 TEST_PATH:=
 TEST_PREFIX:=gcc
@@ -11,8 +14,8 @@ TEST_PREFIX:=gcc
 # Default number of jobs (cores/threads) to compile with
 CPUS:=128
 
-# Optimization level, can be [0, 1, 2, 3, s].
-OPTLVL:=fast
+# Optimization level, can be [0, 1, 2, 3, s, fast].
+OPTLVL:=0
 DBG:=-g
 
 MAKEFLAGS += --jobs=$(CPUS)
@@ -231,4 +234,4 @@ clean_linux:
 
 .PHONY: flash
 flash:
-	@st-flash write $(BIN_DIR)/$(TARGET).bin 0x8000000
+	@STM32_Programmer_CLI.exe -c port=$(PORT) -w $(BIN_DIR)/$(TARGET).bin 0x8000000

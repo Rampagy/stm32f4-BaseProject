@@ -8,10 +8,11 @@
 // Macro to use CCM (Core Coupled Memory) in STM32F4
 #define CCM_RAM __attribute__((section(".ccmram")))
 
-#define FPU_TASK_STACK_SIZE 256
+#define FPU_TASK_STACK_SIZE (configMINIMAL_STACK_SIZE*10)
 
-StackType_t fpuTaskStack[FPU_TASK_STACK_SIZE] CCM_RAM;  // Put task stack in CCM
-StaticTask_t fpuTaskBuffer CCM_RAM;  // Put TCB in CCM
+//StackType_t fpuTaskStack[FPU_TASK_STACK_SIZE] CCM_RAM;  // Put task stack in CCM
+//StaticTask_t fpuTaskBuffer CCM_RAM;  // Put TCB in CCM
+TaskHandle_t xFPU = NULL;
 
 void init_USART3(void);
 void init_user_LED(void);
@@ -19,15 +20,21 @@ void init_user_LED(void);
 void test_FPU_test(void* p);
 
 int main(void) {
-  SystemInit();
+  /* Update the MCU and peripheral clock frequencies */
+  SystemCoreClockUpdate();
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
   init_USART3();
   init_user_LED();
 
+  
+
   // Create a task
   // Stack and TCB are placed in CCM of STM32F4
   // The CCM block is connected directly to the core, which leads to zero wait states
-  xTaskCreateStatic(test_FPU_test, "FPU", FPU_TASK_STACK_SIZE, NULL, 1, fpuTaskStack, &fpuTaskBuffer);
+  //xTaskCreateStatic(test_FPU_test, "FPU", FPU_TASK_STACK_SIZE, NULL, 1, fpuTaskStack, &fpuTaskBuffer);
+  /* Spawn the tasks. */
+  /*           Task,                  Task Name,          Stack Size,                             parameters,     priority,                           task handle */
+  xTaskCreate(test_FPU_test,          "FPU",              FPU_TASK_STACK_SIZE,                    NULL,           1,                                  &xFPU);
 
   printf("System Started!\n");
   vTaskStartScheduler();  // should never return
@@ -108,7 +115,9 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 }
 
 void test_FPU_test(void* p) {
+  (void)p;
   TickType_t xLastWakeTime;
+  const TickType_t xFrequency = 100;
 
   /* Initialize the xLastWakeTime variable with the current time. */
   xLastWakeTime = xTaskGetTickCount();
@@ -116,25 +125,24 @@ void test_FPU_test(void* p) {
   float angle = 0.0f;
 
   printf("Start FPU/DSP test task.\n");
-  for (;;) {
-    angle += 1.0f;
-
+  while (1) {
     if (blink(angle) == 1)
     {
-      GPIOD->BSRR |= GPIO_Pin_12;
+      GPIO_SetBits(GPIOD, GPIO_Pin_12);
     }
     else
     {
-      GPIOD->BSRR &= ~GPIO_Pin_12;
+      GPIO_ResetBits(GPIOD, GPIO_Pin_12);
     }
 
+    angle += 1.0f;
     if (angle > 6.28318530718f)
     {
       angle -= 6.28318530718f;
     }
 
     /* Wait for the next cycle. */
-    vTaskDelayUntil( &xLastWakeTime, 1000 );
+    vTaskDelayUntil( &xLastWakeTime, xFrequency );
   }
 
   vTaskDelete(NULL);
@@ -182,7 +190,7 @@ void init_user_LED(void)
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
   GPIO_Init(GPIOD, &GPIO_InitStructure);
 }
