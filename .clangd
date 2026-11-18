@@ -1,0 +1,12 @@
+CompileFlags:
+  CompilationDatabase: build/firmware
+---
+If:
+  PathMatch: (test_main\.c|Unity/.*)
+CompileFlags:
+  CompilationDatabase: build/tests
+---
+If:
+  PathMatch: blink_led\.[ch]
+CompileFlags:
+  CompilationDatabase: build/clangd

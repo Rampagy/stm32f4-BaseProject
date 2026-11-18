@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 project(stm32f4_base_project LANGUAGES C)
 
+function(select_clangd_database)
+  if(CMAKE_EXPORT_COMPILE_COMMANDS)
+    file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/build/clangd")
+    file(CREATE_LINK "${CMAKE_BINARY_DIR}/compile_commands.json"
+      "${CMAKE_SOURCE_DIR}/build/clangd/compile_commands.json" SYMBOLIC)
+  endif()
+endfunction()
+
 if(CMAKE_CROSSCOMPILING)
   enable_language(ASM)
 else()
@@ -28,6 +36,7 @@ else()
   target_compile_options(test_main PRIVATE -Wall -Wextra -Wdouble-promotion)
   set_target_properties(test_main PROPERTIES C_STANDARD 99 C_EXTENSIONS ON)
   add_test(NAME test_main COMMAND test_main)
+  select_clangd_database()
   return()
 endif()
 
@@ -172,3 +181,5 @@ elseif(ST_FLASH)
 else()
   message(STATUS "No flashing tool found (openocd, STM32_Programmer_CLI, st-flash): 'flash' target disabled")
 endif()
+
+select_clangd_database()
