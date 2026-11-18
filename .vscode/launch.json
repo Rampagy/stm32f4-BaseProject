@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Requires the "Cortex-Debug" extension (marus25.cortex-debug) and OpenOCD.
+      "name": "Debug STM32F4 (OpenOCD)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/firmware/stm32f4_base_project.elf",
+      "preLaunchTask": "Build firmware",
+      "configFiles": ["board/stm32f4discovery.cfg"],
+      "device": "STM32F407VG",
+      "runToEntryPoint": "main",
+      // OpenOCD and gdb from the auto-downloaded tools. Remove these two lines
+      // to use openocd and arm-none-eabi-gdb from PATH instead.
+      "serverpath": "${workspaceFolder}/.toolchain/openocd/bin/openocd",
+      "armToolchainPath": "${workspaceFolder}/.toolchain/current/bin"
+    },
+    {
+      "name": "Attach to STM32F4 (OpenOCD)",
+      "type": "cortex-debug",
+      "request": "attach",
+      "servertype": "openocd",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/firmware/stm32f4_base_project.elf",
+      "configFiles": ["board/stm32f4discovery.cfg"],
+      "device": "STM32F407VG",
+      "serverpath": "${workspaceFolder}/.toolchain/openocd/bin/openocd",
+      "armToolchainPath": "${workspaceFolder}/.toolchain/current/bin"
+    }
+  ]
+}

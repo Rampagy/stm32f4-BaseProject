@@ -1,66 +1,75 @@
-# STM32F4-FreeRTOS
+# STM32F4 Base Project
 
-A demo project of FreeRTOS running on a STM32F4 Discovery board.
+A base project for the STM32F4 Discovery board: FreeRTOS, the STM32F4 standard peripheral library and CMSIS-DSP, built with CMake, with host-side unit tests (Unity).
 
-## Steps to run this example
+## Prerequisites
 
-### Prerequisite
+- Linux (x86_64 or aarch64). On other hosts, install `arm-none-eabi-gcc` yourself (see below).
+- CMake 3.21+ and Ninja.
+- An STM32F4 Discovery board and a USB cable.
 
-1. A PC running Linux(not tested) or Windows with Cygwin.
-2. A STM32F4Discovery board.
-3. A FT232RL USB to serial board which is recommended if there's no serial port on your computer.
-4. USB Cable, Dupont Line and other tools.
-
-### Install the toolchain
-
-The pre-built version of GNU Tools for ARM can be downloaded from its [website](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). It's available for most systems. Follow the instructions in the readme file and installed the toolchain to your system. To verify your installation, simply type `arm-none-eabi-gcc --version` in your terminal, if everything goes right, you'll get output like this:
+## Build
 
 ```
-arm-none-eabi-gcc (Arm GNU Toolchain 12.3.Rel1 (Build arm-12.35)) 12.3.1 20230626
-Copyright (C) 2022 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+$ cmake --preset firmware
+$ cmake --build --preset firmware
 ```
 
-### Install ST-Link utility
+Use the `firmware-release` preset for an optimized build. The output (`stm32f4_base_project.elf`, `.hex`, `.bin` and `.map`) is written to `build/firmware/`.
 
-#### Windows
-Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the STM32CubeProgrammer.  Add the path to the STM32_Programmer_CLI to your enviroment variable `PATH`.
+### Toolchain
 
-#### Linux and OS X
+The first configure of the `firmware` preset downloads the pinned Arm GNU toolchain (15.2.rel1, about 180 MB, SHA-256 verified) into `.toolchain/`. The compiler is needed to configure the project, so this happens at configure time and the first configure takes a while. Everyone then builds with the same compiler. To use your own toolchain instead:
 
-Grab the official utility from [ST website](http://www.st.com/web/catalog/tools/FM146/CL1984/SC724/SS1677/PF251168). Note that you should install the USB driver before install the STM32CubeProgrammer.  Add the path to the STM32_Programmer_CLI to your enviroment variable `PATH`.
+- `-DARM_TOOLCHAIN_PATH=/path/to/bin` (or the `ARM_TOOLCHAIN_PATH` environment variable) selects a specific toolchain, or
+- `-DARM_TOOLCHAIN_AUTO_DOWNLOAD=OFF` uses `arm-none-eabi-gcc` from `PATH`.
 
-**Note:** Not tested
+To change the pinned version, edit the version and hashes at the top of `cmake/arm-none-eabi.cmake`.
 
-or
+### OpenOCD
 
-Clone this [git](https://github.com/texane/stlink), follow the instructions on that page and install st-util to your system.
+The first build downloads a pinned [xPack OpenOCD](https://github.com/xpack-dev-tools/openocd-xpack) (0.12.0-7, about 3 MB, SHA-256 verified) into `.toolchain/`, through the `openocd` target that is part of the default build. Use `-DOPENOCD_EXECUTABLE=/path/to/openocd` for your own build, or `-DOPENOCD_AUTO_DOWNLOAD=OFF` to use `openocd` from `PATH`.
 
-**Note:** Not tested
-
-
-### Compile this example
-The only thing you need to do is to edit the makefile and let it know your toolchain installation path. Change the `TOOLCHARN_ROOT` variable at the third line of makefile and point it to where you installed the toolchain. The you can simply type `make` and compile the example.
-
-### Debug
-Connect your STM32F4Discovery with a USB cable. You can flash the binary into the board with this:
-
-`$ STM32_Programmer_CLI -c port=SWD -w binary/FreeRTOS.bin 0x8000000`
-
-** Note: ** Everything below this is not tested.
-
-The code is wrote directly into internal flash of STM32 processor and it starts to run after reset. To debug it, first start the GDB server:
-
-`$ st-util &`
-
-And then GDB:
+On Linux, your user needs permission to access the ST-Link. Install the udev rules and replug the board:
 
 ```
-$ arm-none-eabi-gdb binary/FreeRTOS.elf
-(gdb) tar ext :4242
-(gdb) b main
-(gdb) c
+$ sudo cp .toolchain/openocd/openocd/contrib/60-openocd.rules /etc/udev/rules.d/
+$ sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-You'll get breakpoint triggered at `main` function, and enjoy!
+## Unit tests
+
+The Unity tests are built for the host machine and need no hardware. They use your system C compiler (GCC 9+ or Clang 10+):
+
+```
+$ cmake --preset tests
+$ cmake --build --preset tests
+$ ctest --preset tests
+```
+
+## Flash
+
+```
+$ cmake --build --preset firmware --target flash
+```
+
+This uses OpenOCD with `board/stm32f4discovery.cfg` (override with `-DOPENOCD_BOARD=...`). If no OpenOCD is available it falls back to `STM32_Programmer_CLI` and then `st-flash`.
+
+## Debug
+
+In VS Code, install the recommended extensions (CMake Tools and Cortex-Debug), build the firmware once (this downloads the tools), connect the board and start the **Debug STM32F4 (OpenOCD)** configuration (F5). It builds the firmware, flashes it and stops at `main`.
+
+From a terminal:
+
+```
+$ .toolchain/openocd/bin/openocd -f board/stm32f4discovery.cfg
+$ .toolchain/current/bin/arm-none-eabi-gdb build/firmware/stm32f4_base_project.elf
+(gdb) target extended-remote :3333
+(gdb) monitor reset halt
+(gdb) break main
+(gdb) continue
+```
+
+## License
+
+The project's own code is released under the [MIT License](LICENSE). Third-party components under `FreeRTOS/`, `Libraries/`, `Unity/`, `config/` and the ST-provided files in `hardware/` (startup, system and interrupt files) remain under their own licenses; their headers say which.

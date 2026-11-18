@@ -1,0 +1,36 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "firmware",
+      "displayName": "STM32F4 firmware (arm-none-eabi)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/firmware",
+      "toolchainFile": "${sourceDir}/cmake/arm-none-eabi.cmake",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "firmware-release",
+      "inherits": "firmware",
+      "displayName": "STM32F4 firmware (release)",
+      "binaryDir": "${sourceDir}/build/firmware-release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "tests",
+      "displayName": "Host unit tests",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/tests",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "firmware", "configurePreset": "firmware" },
+    { "name": "firmware-release", "configurePreset": "firmware-release" },
+    { "name": "tests", "configurePreset": "tests" }
+  ],
+  "testPresets": [
+    { "name": "tests", "configurePreset": "tests", "output": { "outputOnFailure": true } }
+  ]
+}
