@@ -126,8 +126,18 @@ add_executable(${TARGET}
   hardware/system_stm32f4xx.c
   hardware/startup_stm32f4xx.s
   Libraries/syscall/syscalls.c)
+# Keep assembly literal pools in range and preserve symbols referenced only by
+# inline assembly or newlib's non-LTO objects.
+set_source_files_properties(
+  ${FREERTOS}/portable/GCC/ARM_CM4F/port.c
+  hardware/stm32f4xx_it.c
+  Libraries/syscall/syscalls.c
+  PROPERTIES COMPILE_OPTIONS "$<$<CONFIG:Release>:-fno-lto>")
 target_link_libraries(${TARGET} PRIVATE
   stm32f4_config freertos cmsis_dsp stm32f4_stdperiph m c gcc)
+
+set_property(TARGET ${TARGET} freertos cmsis_dsp stm32f4_stdperiph
+  PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
 set_target_properties(${TARGET} PROPERTIES
   SUFFIX .elf
